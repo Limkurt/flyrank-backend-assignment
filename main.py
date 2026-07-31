@@ -29,9 +29,9 @@ def getAll():
 
 @app.get("/tasks/{id}")
 async def getTask(id: int):
-  try:
-    return tasks[id + 1]
-  except:
+  if id <= len(tasks) and id > 0:
+      return tasks[id - 1]
+  else:
     raise HTTPException(status_code=404, detail={"error": f"Task {id} not found"})
 
 @app.post("/tasks", status_code=201)
@@ -48,3 +48,33 @@ async def createTask(task: Task):
   tasks.append(new_task)
 
   return new_task
+
+@app.put("/tasks/{id}")
+async def updateTask(id: int, title: str | None = None, done: bool | None = None):
+  if id <= len(tasks) and id > 0:
+    if title is not None and done is not None:
+      tasks[id - 1]["title"] = title
+      tasks[id - 1]["done"] = done
+    elif title is not None:
+      tasks[id - 1]["title"] = title
+    elif done is not None:
+      tasks[id - 1]["done"] = done
+    else:
+      raise HTTPException(status_code=400, detail={"error": "Empty/invalid body"})
+
+  else:
+    raise HTTPException(status_code=404, detail={"error": "Unknown id"})
+
+  return tasks[id - 1]
+
+@app.delete("/tasks/{id}", status_code=204)
+async def deleteTask(id: int):
+  if id <= len(tasks) and id > 0 and tasks[id - 1]["id"] == id:
+    tasks.pop(id - 1)
+
+    return {
+      "message": "Delete successful"
+    }
+
+  else:
+    raise HTTPException(status_code=404, detail={"error": "Unknown id"})
