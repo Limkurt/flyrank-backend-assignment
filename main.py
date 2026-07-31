@@ -15,26 +15,26 @@ class Task(BaseModel):
 
 app = FastAPI()
 
-@app.get("/")
+@app.get("/", description="Home")
 async def root():
   return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
 
-@app.get("/health")
+@app.get("/health", description="Provides the status of the API")
 async def health():
   return {"status": "ok"}
 
-@app.get("/tasks")
+@app.get("/tasks", description="Output all the tasks")
 def getAll():
   return tasks
 
-@app.get("/tasks/{id}")
+@app.get("/tasks/{id}", description="Output a specified task")
 async def getTask(id: int):
   if id <= len(tasks) and id > 0:
       return tasks[id - 1]
   else:
     raise HTTPException(status_code=404, detail={"error": f"Task {id} not found"})
 
-@app.post("/tasks", status_code=201)
+@app.post("/tasks", status_code=201, description="Create a new task")
 async def createTask(task: Task):
   if not task.title.strip():
     raise HTTPException(status_code=400, detail={"error": "Title cannot be empty"})
@@ -49,7 +49,7 @@ async def createTask(task: Task):
 
   return new_task
 
-@app.put("/tasks/{id}")
+@app.put("/tasks/{id}", description="Update a specified task")
 async def updateTask(id: int, title: str | None = None, done: bool | None = None):
   if id <= len(tasks) and id > 0:
     if title is not None and done is not None:
@@ -67,7 +67,7 @@ async def updateTask(id: int, title: str | None = None, done: bool | None = None
 
   return tasks[id - 1]
 
-@app.delete("/tasks/{id}", status_code=204)
+@app.delete("/tasks/{id}", status_code=204, description="Delete a specified task")
 async def deleteTask(id: int):
   if id <= len(tasks) and id > 0 and tasks[id - 1]["id"] == id:
     tasks.pop(id - 1)
