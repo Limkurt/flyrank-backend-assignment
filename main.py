@@ -34,6 +34,33 @@ async def getTask(id: int):
   else:
     raise HTTPException(status_code=404, detail={"error": f"Task {id} not found"})
 
+@app.get("/tasks/", description="Filter task by done")
+async def getDoneTask(done: bool = True):
+  doneTask = []
+
+  for i in range(len(tasks)):
+    if tasks[i].get("done") == done:
+      doneTask.append(tasks[i])
+
+  if not doneTask:
+    raise HTTPException(status_code=404, detail={"error": "No Task Found"})
+  
+  return doneTask
+
+@app.get("/stats", description="Provides stats of tasks")
+async def getStats():
+  if not tasks:
+    raise HTTPException(status_code=404, detail={"error": "No Task Found"})
+  
+  totalTask = len(tasks)
+  countDone = 0
+
+  for i in range(totalTask):
+    if tasks[i].get("done") == True:
+      countDone += 1
+
+  return {"total": totalTask, "done": countDone, "open": totalTask - countDone}
+
 @app.post("/tasks", status_code=201, description="Create a new task")
 async def createTask(task: Task):
   if not task.title.strip():

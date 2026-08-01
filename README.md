@@ -52,15 +52,17 @@ The API will be available at:
 
 ## API Endpoints
 
-| Method | Endpoint      | Description             |
-| ------ | ------------- | ----------------------- |
-| GET    | `/`           | Home                    |
-| GET    | `/health`     | Check API status.       |
-| GET    | `/tasks`      | Retrieve all tasks      |
-| GET    | `/tasks/{id}` | Retrieve a task by ID   |
-| POST   | `/tasks`      | Create a new task       |
-| PUT    | `/tasks/{id}` | Update an existing task |
-| DELETE | `/tasks/{id}` | Delete a task           |
+| Method | Endpoint      | Description                   |
+| ------ | ------------- | ----------------------------- |
+| GET    | `/`           | Home                          |
+| GET    | `/health`     | Check API status.             |
+| GET    | `/tasks`      | Retrieve all tasks            |
+| GET    | `/tasks/{id}` | Retrieve a task by ID         |
+| GET    | `/tasks/`     | Retrieve all tasks by done    |
+| GET    | `/stats`      | Retrieve tasks stats by done  |
+| POST   | `/tasks`      | Create a new task             |
+| PUT    | `/tasks/{id}` | Update an existing task       |
+| DELETE | `/tasks/{id}` | Delete a task                 |
 
 ## Example Request
 
