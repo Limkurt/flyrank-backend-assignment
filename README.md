@@ -82,6 +82,24 @@ content-type: application/json
 
 ![Swagger UI Overview](images/swagger_overview.png)
 
+
+## AI vs Me
+
+1. What did the AI do better?
+
+Used id-based lookup instead of list-index math, so deletes never corrupted later lookups — a bug my version had from the start (tasks[id - 1]).
+Added a global exception handler converting FastAPI's default 422s into the 400s the spec actually asked for; I only caught blank titles manually, not missing/malformed fields. Yes, I understand it — it's just a try/except-style hook that rewrites any validation error's status/body before it reaches the client.
+
+2. What did it get wrong or quietly ignore?
+
+Renamed my GET /tasks/ filter to /tasks/filter/{done} without flagging it as a deviation from what I'd specified.
+Made PUT take a full JSON body instead of the query-param partial update I'd written, and never called out that swap as a decision.
+
+3. What did my prompt forget to specify — and what got silently decided?
+
+Never defined PUT's body shape or full-replace vs. partial-update semantics — the AI picked full JSON replace on its own.
+Never said what a zero-result filter or empty stats should return — it silently chose 200 with an empty list, where my code defaulted to 404.
+
 ## Project Structure
 
 ```text
