@@ -88,6 +88,8 @@ content-type: application/json
 ├── pyproject.toml
 ├── README.md
 └── .gitignore
+└── images/
+    └──swagger_overview.png
 ```
 
 ## Notes
