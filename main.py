@@ -1,12 +1,45 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import sqlite3
 
 #Dummy data
-tasks = [
+data = [
   { "id": 1, "title": "Draw", "done": False}, 
   { "id": 2, "title": "Watch", "done": False},
   { "id": 3, "title": "Listen", "done": False}
 ]
+
+#Create table
+con = sqlite3.connect("tasks.db")
+cur = con.cursor()
+
+create_table_query = '''
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT ,
+  done BOOLEAN
+);
+'''
+
+cur.execute(create_table_query)
+con.commit()
+
+#Insert Query
+cur.execute("SELECT EXISTS(SELECT 1 FROM tasks)")
+is_empty = cur.fetchone()[0] == 0 # Checks if table has data
+
+if is_empty:
+  for item in data:
+    cur.execute(
+      """
+      INSERT INTO tasks (title, done)
+      VALUES (?, ?)      
+      """,
+      (item["title"], item["done"])
+    )
+
+  con.commit()
+con.close()
 
 class Task(BaseModel):
   id: int | None = None
@@ -14,6 +47,21 @@ class Task(BaseModel):
   done: bool | None = False
 
 app = FastAPI()
+
+def get_db():
+  return sqlite3.connect("tasks.db")
+
+def _find_task_index(task_id: int):
+  for idx, t in enumerate(tasks):
+    if t["id"] == task_id:
+      return idx
+  return None
+
+def _not_found(task_id: int) -> HTTPException:
+  return HTTPException(
+      status_code=404,
+      detail={"error": f"Task {task_id} not found"}
+  )
 
 @app.get("/", description="Home")
 async def root():
@@ -25,14 +73,21 @@ async def health():
 
 @app.get("/tasks", description="Output all the tasks")
 def getAll():
-  return tasks
+  con = get_db()
+  cur = con.cursor()
+
+  cur.execute("SELECT * FROM tasks")
+  res = cur.fetchall()
+
+  con.close()
+  return res
 
 @app.get("/tasks/{id}", description="Output a specified task")
 async def getTask(id: int):
-  if id <= len(tasks) and id > 0:
-      return tasks[id - 1]
-  else:
-    raise HTTPException(status_code=404, detail={"error": f"Task {id} not found"})
+  idx = _find_task_index(id)
+  if idx is None:
+    raise _not_found(id)
+  return tasks[idx]
 
 @app.get("/tasks/", description="Filter task by done")
 async def getDoneTask(done: bool = True):

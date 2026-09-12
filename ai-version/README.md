@@ -11,7 +11,7 @@ pip install -r requirements.txt
 ## Run
 
 ```bash
-uvicorn main:app --reload
+uv run fastapi dev main.py
 ```
 
 The API will be available at `http://127.0.0.1:8000`.
