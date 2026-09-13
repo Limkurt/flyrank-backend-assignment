@@ -42,15 +42,34 @@ if is_empty:
   con.commit()
 con.close()
 
-class Task(BaseModel):
-  id: int | None = None
-  title: str
-  done: bool | None = False
+# class Task(BaseModel):
+#   id: int | None = None
+#   title: str
+#   done: bool | None = False
 
 app = FastAPI()
 
 def get_db():
   return sqlite3.connect("tasks.db")
+
+def _normalize_title(task_title: str) -> str:
+  return task_title.strip().lower()
+
+def _title_taken(normalized_task_title: str) -> bool:
+  with closing(get_db()) as con:
+    cur = con.cursor()
+
+    cur.execute(
+      """
+      SELECT title
+      FROM tasks  
+      """
+    )
+
+    for (title,) in cur:
+      if _normalize_title(title) == normalized_task_title:
+        return True
+    return False
 
 # def _find_task_index(task_id: int):
 #   for idx, t in enumerate(tasks):
@@ -63,6 +82,12 @@ def _not_found(task_id: int) -> HTTPException:
       status_code=404,
       detail={"error": f"Task {task_id} not found"}
   )
+
+def _invalid_input(msg: str) -> HTTPException:
+  raise HTTPException(
+      status_code=400,
+      detail={"error": msg})
+
 
 # --------------------------------------------------------------------------
 # 1. Home
@@ -117,6 +142,10 @@ async def getTask(id: int):
       return res
     return _not_found(id)
 
+# --------------------------------------------------------------------------
+# 5. Get all finished task
+# --------------------------------------------------------------------------
+
 @app.get("/tasks/", description="Filter task by done")
 async def getDoneTask(done: bool = True):
   doneTask = []
@@ -129,6 +158,10 @@ async def getDoneTask(done: bool = True):
     raise HTTPException(status_code=404, detail={"error": "No Task Found"})
   
   return doneTask
+
+# --------------------------------------------------------------------------
+# 6. Tasks Statistics
+# --------------------------------------------------------------------------
 
 @app.get("/stats", description="Provides stats of tasks")
 async def getStats():
@@ -144,20 +177,44 @@ async def getStats():
 
   return {"total": totalTask, "done": countDone, "open": totalTask - countDone}
 
+# --------------------------------------------------------------------------
+# 7. Create a new task
+# --------------------------------------------------------------------------
+
 @app.post("/tasks", status_code=201, description="Create a new task")
-async def createTask(task: Task):
-  if not task.title.strip():
-    raise HTTPException(status_code=400, detail={"error": "Title cannot be empty"})
+async def createTask(title: str):
+  normalized = _normalize_title(title)
 
-  new_task = {
-    "id": len(tasks) + 1,
-    "title": task.title,
-    "done": task.done
-  }
+  # Error Handling
+  if not normalized:
+    return _invalid_input("A task title cannot be empty")
+  elif _title_taken(normalized):
+    return _invalid_input(f"A task title '{title}' already exists")
 
-  tasks.append(new_task)
+  # Insert New Task
+  with closing(get_db()) as con:
+    cur = con.cursor()
 
-  return new_task
+    cur.execute(
+      """
+      INSERT INTO tasks (title, done)
+      VALUES (?, ?)
+      """,
+      (title, 0)
+    )
+    con.commit()
+    
+    cur.execute(
+      """
+      SELECT *
+      FROM tasks
+      WHERE title = ?
+      """,
+      (title,)
+    )
+    res = cur.fetchall()
+
+    return res
 
 @app.put("/tasks/{id}", description="Update a specified task")
 async def updateTask(id: int, title: str | None = None, done: bool | None = None):
