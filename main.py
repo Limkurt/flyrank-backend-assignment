@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
+from contextlib import closing
 
 #Dummy data
 data = [
@@ -51,11 +52,11 @@ app = FastAPI()
 def get_db():
   return sqlite3.connect("tasks.db")
 
-def _find_task_index(task_id: int):
-  for idx, t in enumerate(tasks):
-    if t["id"] == task_id:
-      return idx
-  return None
+# def _find_task_index(task_id: int):
+#   for idx, t in enumerate(tasks):
+#     if t["id"] == task_id:
+#       return idx
+#   return None
 
 def _not_found(task_id: int) -> HTTPException:
   return HTTPException(
@@ -63,31 +64,58 @@ def _not_found(task_id: int) -> HTTPException:
       detail={"error": f"Task {task_id} not found"}
   )
 
+# --------------------------------------------------------------------------
+# 1. Home
+# --------------------------------------------------------------------------
+
 @app.get("/", description="Home")
 async def root():
   return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
+
+# --------------------------------------------------------------------------
+# 2. Health
+# --------------------------------------------------------------------------
 
 @app.get("/health", description="Provides the status of the API")
 async def health():
   return {"status": "ok"}
 
+# --------------------------------------------------------------------------
+# 3. Get all tasks
+# --------------------------------------------------------------------------
+
 @app.get("/tasks", description="Output all the tasks")
-def getAll():
-  con = get_db()
-  cur = con.cursor()
+async def getAll():
+  with closing(get_db()) as con:
+    cur = con.cursor()
 
-  cur.execute("SELECT * FROM tasks")
-  res = cur.fetchall()
+    cur.execute("SELECT * FROM tasks")
+    res = cur.fetchall()
 
-  con.close()
-  return res
+    return res
+
+# --------------------------------------------------------------------------
+# 4. Get specific tasks by ID
+# --------------------------------------------------------------------------
 
 @app.get("/tasks/{id}", description="Output a specified task")
 async def getTask(id: int):
-  idx = _find_task_index(id)
-  if idx is None:
-    raise _not_found(id)
-  return tasks[idx]
+  with closing(get_db()) as con:
+    cur = con.cursor()
+
+    cur.execute(
+      """
+      SELECT *
+      FROM tasks
+      WHERE id = ?
+      """,
+      (id,)
+    )
+    res = cur.fetchall()
+
+    if res:
+      return res
+    return _not_found(id)
 
 @app.get("/tasks/", description="Filter task by done")
 async def getDoneTask(done: bool = True):
