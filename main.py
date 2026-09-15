@@ -1,46 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import sqlite3
 from contextlib import closing
 
-#Dummy data
-data = [
-  { "id": 1, "title": "Draw", "done": False}, 
-  { "id": 2, "title": "Watch", "done": False},
-  { "id": 3, "title": "Listen", "done": False}
-]
+from database import init_db
+from repositories import task_repository
 
-#Create table
-con = sqlite3.connect("tasks.db")
-cur = con.cursor()
-
-create_table_query = '''
-CREATE TABLE IF NOT EXISTS tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT ,
-  done BOOLEAN
-);
-'''
-
-cur.execute(create_table_query)
-con.commit()
-
-#Insert Query
-cur.execute("SELECT EXISTS(SELECT 1 FROM tasks)")
-is_empty = cur.fetchone()[0] == 0 # Checks if table has data
-
-if is_empty:
-  for item in data:
-    cur.execute(
-      """
-      INSERT INTO tasks (title, done)
-      VALUES (?, ?)      
-      """,
-      (item["title"], item["done"])
-    )
-
-  con.commit()
-con.close()
+init_db()
 
 # class Task(BaseModel):
 #   id: int | None = None
@@ -55,38 +21,35 @@ def get_db():
 def _normalize_title(task_title: str) -> str:
   return task_title.strip().lower()
 
-def _title_taken(normalized_task_title: str) -> bool:
+def _title_taken(normalized_task_title: str, exclude_id: int | None = None) -> bool:
   with closing(get_db()) as con:
     cur = con.cursor()
 
     cur.execute(
       """
-      SELECT title
+      SELECT id, title
       FROM tasks  
       """
     )
 
-    for (title,) in cur:
+    for id, title in cur:
+      if exclude_id is not None and id == exclude_id:
+        continue
       if _normalize_title(title) == normalized_task_title:
         return True
     return False
 
-# def _find_task_index(task_id: int):
-#   for idx, t in enumerate(tasks):
-#     if t["id"] == task_id:
-#       return idx
-#   return None
-
 def _not_found(task_id: int) -> HTTPException:
   return HTTPException(
-      status_code=404,
+      status_code=status.HTTP_404_NOT_FOUND,
       detail={"error": f"Task {task_id} not found"}
   )
 
-def _invalid_input(msg: str) -> HTTPException:
-  raise HTTPException(
-      status_code=400,
-      detail={"error": msg})
+def _bad_request(msg: str) -> HTTPException:
+  return HTTPException(
+    status_code=status.HTTP_400_BAD_REQUEST,
+    detail={"error": msg}
+  )
 
 
 # --------------------------------------------------------------------------
@@ -111,13 +74,7 @@ async def health():
 
 @app.get("/tasks", description="Output all the tasks")
 async def getAll():
-  with closing(get_db()) as con:
-    cur = con.cursor()
-
-    cur.execute("SELECT * FROM tasks")
-    res = cur.fetchall()
-
-    return res
+  return task_repository.getAll()
 
 # --------------------------------------------------------------------------
 # 4. Get specific tasks by ID
@@ -125,22 +82,11 @@ async def getAll():
 
 @app.get("/tasks/{id}", description="Output a specified task")
 async def getTask(id: int):
-  with closing(get_db()) as con:
-    cur = con.cursor()
+  res = task_repository.find_task(id)
 
-    cur.execute(
-      """
-      SELECT *
-      FROM tasks
-      WHERE id = ?
-      """,
-      (id,)
-    )
-    res = cur.fetchall()
-
-    if res:
-      return res
-    return _not_found(id)
+  if res:
+    return res
+  raise _not_found(id)
 
 # --------------------------------------------------------------------------
 # 5. Get all finished task
@@ -187,9 +133,9 @@ async def createTask(title: str):
 
   # Error Handling
   if not normalized:
-    return _invalid_input("A task title cannot be empty")
+    raise _bad_request("A task title cannot be empty")
   elif _title_taken(normalized):
-    return _invalid_input(f"A task title '{title}' already exists")
+    raise _bad_request(f"A task title '{title}' already exists")
 
   # Insert New Task
   with closing(get_db()) as con:
@@ -216,32 +162,34 @@ async def createTask(title: str):
 
     return res
 
+# --------------------------------------------------------------------------
+# 8. Update task
+# --------------------------------------------------------------------------
+
 @app.put("/tasks/{id}", description="Update a specified task")
 async def updateTask(id: int, title: str | None = None, done: bool | None = None):
-  if id <= len(tasks) and id > 0:
-    if title is not None and done is not None:
-      tasks[id - 1]["title"] = title
-      tasks[id - 1]["done"] = done
-    elif title is not None:
-      tasks[id - 1]["title"] = title
-    elif done is not None:
-      tasks[id - 1]["done"] = done
-    else:
-      raise HTTPException(status_code=400, detail={"error": "Empty/invalid body"})
+  if not task_repository.find_task(id):
+    raise _not_found(id)
 
-  else:
-    raise HTTPException(status_code=404, detail={"error": "Unknown id"})
+  if title is None and done is None:
+    raise _bad_request("Provide at least one of 'title' or 'done' to update")
 
-  return tasks[id - 1]
+  if title is not None:
+    normalized = _normalize_title(title)
+    if not normalized:
+      raise _bad_request("A task title cannot be empty")
+    if _title_taken(normalized, exclude_id=id):
+      raise _bad_request(f"A task title '{title}' already exists")
+    task_repository.update_title(id, title)
 
-@app.delete("/tasks/{id}", status_code=204, description="Delete a specified task")
+  if done is not None:
+    task_repository.update_done(id, done)
+
+  return task_repository.find_task(id)
+
+@app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT, description="Delete a specified task")
 async def deleteTask(id: int):
-  if id <= len(tasks) and id > 0 and tasks[id - 1]["id"] == id:
-    tasks.pop(id - 1)
+  if not task_repository.find_task(id):
+    raise _not_found(id)
 
-    return {
-      "message": "Delete successful"
-    }
-
-  else:
-    raise HTTPException(status_code=404, detail={"error": "Unknown id"})
+  task_repository.delete_task(id)
