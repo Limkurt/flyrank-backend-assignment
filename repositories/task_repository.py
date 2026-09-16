@@ -17,9 +17,19 @@ def getAll() -> list[tuple]:
     cur = con.cursor()
 
     cur.execute("SELECT * FROM tasks")
-    res = cur.fetchall()
 
-    return res
+    return cur.fetchall()
+
+def getDone(task_done: bool) -> list[tuple]:
+  with closing(get_db()) as con:
+    cur = con.cursor()
+
+    cur.execute(
+      "SELECT * FROM tasks WHERE done = ?",
+      (task_done,)
+    )
+
+    return cur.fetchall()
 
 def update_title(task_id: int, task_title: str) -> None:
   with closing(get_db()) as con:

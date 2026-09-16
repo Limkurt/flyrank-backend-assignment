@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel
 import sqlite3
 from contextlib import closing
 
@@ -7,11 +6,6 @@ from database import init_db
 from repositories import task_repository
 
 init_db()
-
-# class Task(BaseModel):
-#   id: int | None = None
-#   title: str
-#   done: bool | None = False
 
 app = FastAPI()
 
@@ -94,16 +88,11 @@ async def getTask(id: int):
 
 @app.get("/tasks/", description="Filter task by done")
 async def getDoneTask(done: bool = True):
-  doneTask = []
+  done_tasks = task_repository.getDone(done)
 
-  for i in range(len(tasks)):
-    if tasks[i].get("done") == done:
-      doneTask.append(tasks[i])
-
-  if not doneTask:
-    raise HTTPException(status_code=404, detail={"error": "No Task Found"})
-  
-  return doneTask
+  if done_tasks:
+    return done_tasks
+  raise _bad_request(f"No found {done} task")
 
 # --------------------------------------------------------------------------
 # 6. Tasks Statistics
@@ -111,17 +100,10 @@ async def getDoneTask(done: bool = True):
 
 @app.get("/stats", description="Provides stats of tasks")
 async def getStats():
-  if not tasks:
-    raise HTTPException(status_code=404, detail={"error": "No Task Found"})
-  
-  totalTask = len(tasks)
-  countDone = 0
+  count_done = len(task_repository.getDone(True))
+  task_total = len(task_repository.getAll())
 
-  for i in range(totalTask):
-    if tasks[i].get("done") == True:
-      countDone += 1
-
-  return {"total": totalTask, "done": countDone, "open": totalTask - countDone}
+  return {"total": task_total, "done": count_done, "open": task_total - count_done}
 
 # --------------------------------------------------------------------------
 # 7. Create a new task
