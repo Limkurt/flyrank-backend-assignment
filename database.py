@@ -1,6 +1,12 @@
-import sqlite3
+import sqlite3 # TO REMOVE
+import psycopg
+from dotenv import load_dotenv
+import os
 
-DB_PATH = "tasks.db"
+# Load variable from .env into os.environ
+load_dotenv()
+
+DB_PATH = os.getenv("DATABASE_URL")
 
 #Dummy data
 DATA = [
@@ -10,34 +16,30 @@ DATA = [
 ]
 
 def get_db():
-  return sqlite3.connect(DB_PATH)
+  return psycopg.connect(DB_PATH)
 
 def init_db():
-  con = get_db()
-  cur = con.cursor()
+  with get_db() as con:
+    with con.cursor() as cur:
 
-  cur.execute("""
-    CREATE TABLE IF NOT EXISTS tasks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT,
-      DONE BOOLEAN
-    );
-  """)
-  con.commit()
+      cur.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+          id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+          title TEXT,
+          DONE BOOLEAN
+        );
+      """)
 
-  # Insert Inquiry
-  cur.execute("SELECT EXISTS(SELECT 1 FROM tasks)")
-  is_empty = cur.fetchone()[0] == 0 # Checks if table has data
+      # Insert Inquiry
+      cur.execute("SELECT EXISTS(SELECT 1 FROM tasks)")
+      is_empty = cur.fetchone()[0] == 0 # Checks if table has data
 
-  if is_empty:
-    for item in DATA:
-      cur.execute(
-        """
-        INSERT INTO tasks (title, done)
-        VALUES (?, ?)
-        """,
-        (item["title"], item["done"])
-      )
-
-    con.commit()
-  con.close()
+      if is_empty:
+        for item in DATA:
+          cur.execute(
+            """
+            INSERT INTO tasks (title, done)
+            VALUES (%s, %s)
+            """,
+            (item["title"], item["done"])
+          )
