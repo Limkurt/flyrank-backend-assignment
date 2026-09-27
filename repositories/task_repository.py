@@ -1,24 +1,22 @@
-from contextlib import closing
-
 from database import get_db
 
+def get_all() -> list[tuple]:
+  with get_db() as con:
+    with con.cursor() as cur:
+
+      cur.execute("SELECT * FROM tasks")
+
+      return cur.fetchall()
+
 def find_task(task_id: int) -> tuple | None:
-  with closing(get_db()) as con:
-    cur = con.cursor()
+  with get_db() as con:
+    with con.cursor() as cur:
 
-    cur.execute(
-      "SELECT * FROM tasks WHERE id = ?",
-      (task_id,)
-    )
-    return cur.fetchone()
-
-def getAll() -> list[tuple]:
-  with closing(get_db()) as con:
-    cur = con.cursor()
-
-    cur.execute("SELECT * FROM tasks")
-
-    return cur.fetchall()
+      cur.execute(
+        "SELECT * FROM tasks WHERE id = %s",
+        (task_id,)
+      )
+      return cur.fetchone()
 
 def getDone(task_done: bool) -> list[tuple]:
   with closing(get_db()) as con:
