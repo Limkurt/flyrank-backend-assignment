@@ -1,117 +1,118 @@
 # FLYRANK: CRUD API
 
-A simple CRUD API that manages a to-do list. It demonstrates the four fundamental Create, Read, Update, and Delete (CRUD) operations using FastAPI. The project is handwritten from scratch, includes interactive API documentation through Swagger UI, and maintains a transparent Git commit history.
+A REST API for managing a to-do list, built with FastAPI. The project started as an in-memory CRUD implementation and progressively introduced SQLite, PostgreSQL, Docker, environment-based configuration, and a layered architecture.
 
-## Tools
+## Tech Stack
 
-- Python >= 3.11
-- FastAPI
-- Swagger UI (built in)
-- SQLite3
+* Python 3.11
+* FastAPI
+* Psycopg
+* PostgreSQL
+* Docker
+* uv
 
-## Limitations
+## Current Features
 
-- No authentication or authorization.
+* CRUD operations for tasks
+* Task filtering and statistics
+* PostgreSQL persistence
+* Dockerized API and database
+* Environment-based database configuration
+* Interactive API documentation with Swagger UI
+* Repository and service layers
+
+## Progression
+
+1. **In-memory CRUD API**
+2. **SQLite persistence**
+3. **PostgreSQL with Docker**
+4. **Gradual architectural refactoring**
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.11 or later
-- `uv` package manager
+* Docker
 
-### Installation
+### Setup
 
 Clone the repository:
 
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/Limkurt/flyrank-backend-assignment.git
+cd flyrank-backend-assignment
 ```
 
-Install the project dependencies:
+Create `.env` from `.env.example` and configure the database variables.
+
+Start the application:
 
 ```bash
-uv sync
+docker compose up
 ```
 
-### Running the API
-
-Start the development server:
-
-```bash
-uv run fastapi dev main.py
-```
+Docker Compose builds the API image, installs the Python dependencies, and starts the PostgreSQL database.
 
 The API will be available at:
 
-- API: http://127.0.0.1:8000
-- Swagger UI: http://127.0.0.1:8000/docs
-- ReDoc: http://127.0.0.1:8000/redoc
+* http://0.0.0.0:8000
+* Swagger UI: http://0.0.0.0:8000/docs
 
 ## API Endpoints
 
-| Method | Endpoint      | Description                  |
-| ------ | ------------- | ---------------------------- |
-| GET    | `/`           | Home                         |
-| GET    | `/health`     | Check API status.            |
-| GET    | `/tasks`      | Retrieve all tasks           |
-| GET    | `/tasks/{id}` | Retrieve a task by ID        |
-| GET    | `/tasks/`     | Retrieve all tasks by done   |
-| GET    | `/stats`      | Retrieve tasks stats by done |
-| POST   | `/tasks`      | Create a new task            |
-| PUT    | `/tasks/{id}` | Update an existing task      |
-| DELETE | `/tasks/{id}` | Delete a task                |
+| Method | Endpoint      | Description              |
+| ------ | ------------- | ------------------------ |
+| GET    | `/`           | Home                     |
+| GET    | `/health`     | API health check         |
+| GET    | `/tasks`      | Retrieve all tasks       |
+| GET    | `/tasks/{id}` | Retrieve a task          |
+| GET    | `/tasks/`     | Retrieve tasks by status |
+| GET    | `/stats`      | Task statistics          |
+| POST   | `/tasks`      | Create a task            |
+| PUT    | `/tasks/{id}` | Update a task            |
+| DELETE | `/tasks/{id}` | Delete a task            |
 
-## Example Request
+## Example
 
-Create a new task:
+```bash
+curl -X POST http://0.0.0.0:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Buy milk"}'
+```
 
-curl -i -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d '{"title":"Buy milk"}'
-
-HTTP/1.1 201 Created
-date: Fri, 31 Jul 2026 15:32:36 GMT
-server: uvicorn
-content-length: 40
-content-type: application/json
-
-{"id":4,"title":"Buy milk","done":false}%
+```json
+{
+  "id": 4,
+  "title": "Buy milk",
+  "done": false
+}
+```
 
 ## Swagger UI
 
 ![Swagger UI Overview](images/swagger_overview.png)
 
+## Database
+
+![The Postgres Database(via psql)](images/psql_database.png)
+
 ## AI vs Me
 
-1. What did the AI do better?
+### 1. What did the AI do better?
 
-Used schemas and OOP principles, which ensures consistency between request and response payloads. Moreover, it generated better documentation via Swagger UI, cleanly organizing endpoints by tag/role and providing example request bodies. It also implemented a `try/finally` dependency pattern to manage sessions, which handles database connection lifecycles better than my use of `contextlib.closing`. Overall, the AI's version is much cleaner, though it didn't abstract `HTTPException` into a reusable helper function—not a big issue for generated code, but a major time-saver when writing code by hand.
+Used schemas and OOP principles, which ensured consistency between request and response payloads. It also generated better Swagger documentation by organizing endpoints and providing example request bodies. Its `try/finally` dependency pattern managed database session lifecycles more cleanly than my initial use of `contextlib.closing`.
 
-2. What did it get wrong or quietly ignore?
+Overall, the AI-generated implementation was cleaner, although it did not abstract `HTTPException` into a reusable helper function, which would have been useful for reducing repetition when writing the code manually.
 
-It didn't make any critical errors, but it ignored the requested database filename (`tasks.db`) and defaulted to `app.db` instead.
+### 2. What did it get wrong or quietly ignore?
 
-3. What did my prompt forget to specify — and what got silently decided?
+It ignored the requested database filename, `tasks.db`, and defaulted to `app.db`.
 
-I forgot to define custom error-handling scenarios and HTTP status codes, so it defaulted to only raising `HTTP_404_NOT_FOUND`.
+### 3. What did my prompt forget to specify?
 
-## Project Structure
+I did not define custom error-handling scenarios or HTTP status codes, so the generated implementation defaulted to `HTTP_404_NOT_FOUND`.
 
-```text
-.
-├── database.py
-├── main.py
-├── pyproject.toml
-├── README.md
-└── .gitignore
-└── repositories/
-    └──task_repository.py
-└── images/
-    └──swagger_overview.png
-```
+## Limitations
 
-## Notes
-
-This project is intended as a simple demonstration of RESTful CRUD operations using FastAPI. It uses SQLite because of its straightforward deployment and zero configuration setup, while still providing a reliable file-based database that persists data across server restarts, unlike the initial in-memory approach.
-
-At this stage of the project, a transition to a layered architecture is also in progress.
+* No authentication or authorization yet.
+* Project architecture is still being refined.

@@ -26,7 +26,7 @@ def _bad_request(msg: str) -> HTTPException:
 
 @router.get("/", description="Home")
 async def root():
-  return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
+  return {"name": "Task API", "version": "3.0", "endpoints": ["/tasks"]}
 
 # --------------------------------------------------------------------------
 # 2. Health
