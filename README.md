@@ -99,20 +99,15 @@ curl -X POST http://0.0.0.0:8000/tasks \
 ## AI vs Me
 
 ### 1. What did the AI do better?
-
-Used schemas and OOP principles, which ensured consistency between request and response payloads. It also generated better Swagger documentation by organizing endpoints and providing example request bodies. Its `try/finally` dependency pattern managed database session lifecycles more cleanly than my initial use of `contextlib.closing`.
-
-Overall, the AI-generated implementation was cleaner, although it did not abstract `HTTPException` into a reusable helper function, which would have been useful for reducing repetition when writing the code manually.
+It used schemas and OOP principles, which ensured consistency between request and response payloads. It also generated better Swagger documentation by organizing endpoints and providing example request bodies, making it more user-friendly and clearer on how the program functions and how to use it. Moreover, it had a better project structure; even though I gave it my desired layout, it improved on it by consolidating everything into a single app directory. Overall, the AI-generated implementation was cleaner, although it did not abstract HTTPException into a reusable helper function to cut down on repetitive typing. However, the AI version did make better use of classes for catching and raising errors.
 
 ### 2. What did it get wrong or quietly ignore?
-
-It ignored the requested database filename, `tasks.db`, and defaulted to `app.db`.
+It hardcoded the secret and didn't use psycopg, opting for sqlalchemy instead. It also hardcoded the GET /health API without checking if the database is actually running with SELECT 1 FROM taskdb.
 
 ### 3. What did my prompt forget to specify?
+I forgot to mention which package manager to use, which module to use to interact with the database, and the database name itself. I also forgot to specify how to properly output the result, such as whether it should be in a downloadable file format or just a simple, copyable code block.
 
-I did not define custom error-handling scenarios or HTTP status codes, so the generated implementation defaulted to `HTTP_404_NOT_FOUND`.
 
 ## Limitations
 
 * No authentication or authorization yet.
-* Project architecture is still being refined.

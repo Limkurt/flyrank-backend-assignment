@@ -11,7 +11,7 @@ router = APIRouter()
 def _not_found(task_id: int) -> HTTPException:
   return HTTPException(
       status_code=status.HTTP_404_NOT_FOUND,
-      detail={"error": f"Task {task_id} not found"}
+      detail={"error": f"No Task {task_id} found"}
   )
 
 def _bad_request(msg: str) -> HTTPException:
@@ -34,7 +34,7 @@ async def root():
 
 @router.get("/health", description="Provides the status of the API")
 async def health():
-  return {"status": "ok"}
+  return task_service.get_health()
 
 # --------------------------------------------------------------------------
 # 3. Get all tasks
@@ -56,6 +56,30 @@ async def getTask(id: int):
     return task
 
   raise _not_found(id)
+
+# --------------------------------------------------------------------------
+# 5. Get all finished task
+# --------------------------------------------------------------------------
+
+@router.get("/tasks/", description="Filter task by status")
+async def getDoneTask(done: bool):
+  tasks = task_service.get_tasks_by_done(done)
+
+  if tasks:
+    return tasks
+
+  raise _not_found(done)
+
+# --------------------------------------------------------------------------
+# 6. Tasks Statistics
+# --------------------------------------------------------------------------
+
+@router.get("/stats", description="Provides stats of tasks")
+async def getStats():
+  count_done = len(task_service.get_tasks_by_done(True))
+  task_total = len(task_service.get_all())
+
+  return {"total": task_total, "done": count_done, "open": task_total - count_done}
 
 # --------------------------------------------------------------------------
 # 7. Create a new task

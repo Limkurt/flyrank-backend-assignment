@@ -1,5 +1,13 @@
 from database import get_db
 
+def get_health() -> bool:
+  with get_db() as con:
+    with con.cursor() as cur:
+
+      cur.execute("SELECT 1 FROM tasks")
+
+      return cur.fetchone()
+
 def get_all() -> list[tuple]:
   with get_db() as con:
     with con.cursor() as cur:
@@ -19,15 +27,15 @@ def find_task(task_id: int) -> tuple | None:
       return cur.fetchone()
 
 def getDone(task_done: bool) -> list[tuple]:
-  with closing(get_db()) as con:
-    cur = con.cursor()
+  with get_db() as con:
+    with con.cursor() as cur:
 
-    cur.execute(
-      "SELECT * FROM tasks WHERE done = ?",
-      (task_done,)
-    )
+      cur.execute(
+        "SELECT * FROM tasks WHERE done = %s",
+        (task_done,)
+      )
 
-    return cur.fetchall()
+      return cur.fetchall()
 
 def create_task(task_title: str) -> tuple:
   with get_db() as con:

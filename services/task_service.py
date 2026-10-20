@@ -28,8 +28,14 @@ def _title_taken(normalized_task_title: str, exclude_id: int | None = None) -> b
 # Task services
 # --------------------------------------------------------------------------
 
+def get_health() -> dict:
+  return {"status": "ok" if task_repository.get_health() else "unavailable"}
+
 def get_all() -> list[tuple]:
   return task_repository.get_all()
+
+def get_tasks_by_done(task_done: bool) -> list[tuple] | None:
+  return task_repository.getDone(task_done)
 
 def find_task(task_id: int) -> tuple | None:
   return task_repository.find_task(task_id)

@@ -1,4 +1,3 @@
-import sqlite3 # TO REMOVE
 import psycopg
 from dotenv import load_dotenv
 import os
