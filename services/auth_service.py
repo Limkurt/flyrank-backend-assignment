@@ -18,7 +18,7 @@ def signup(email: str, password: str) -> dict:
   else:
     raise InvalidAuthError("Bad Request")
 
-  return response
+  return response.user
 
 def login(email: str, password: str):
   clean_email = email.strip().lower()
@@ -28,4 +28,7 @@ def login(email: str, password: str):
     "password": password
   })
 
-  return response
+  return {
+    "access_token": response.session.access_token,
+    "refresh_token": response.session.refresh_token
+  }
