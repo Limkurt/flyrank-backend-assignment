@@ -32,3 +32,17 @@ def login(email: str, password: str):
     "access_token": response.session.access_token,
     "refresh_token": response.session.refresh_token
   }
+
+def verify_user(token):
+  try:
+    response = supabase.auth.get_user(token)
+    user = response.user
+
+    return {
+      "id": user.id,
+      "email": user.email,
+      "created_at": user.created_at
+    }
+
+  except:
+    raise InvalidAuthError("Invalid or expired token.")

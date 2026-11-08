@@ -44,4 +44,7 @@ async def read_profile(token: Annotated[str, Depends(oauth2_scheme)]):
   if not token or not token.strip():
     raise invalid_login("Access token required")
 
-  return token
+  try:
+    return auth_service.verify_user(token)
+  except InvalidAuthError as e:
+    raise invalid_login(str(e))
