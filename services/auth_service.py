@@ -1,4 +1,8 @@
 from database import supabase
+from fastapi import Depends
+from typing import Annotated
+
+from fastapi.security import OAuth2PasswordBearer
 
 # --------------------------------------------------------------------------
 # Exceptions
@@ -6,6 +10,9 @@ from database import supabase
 
 class InvalidAuthError(Exception):
   pass
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def signup(email: str, password: str) -> dict:
   clean_email = email.strip().lower()
@@ -33,16 +40,18 @@ def login(email: str, password: str):
     "refresh_token": response.session.refresh_token
   }
 
-def verify_user(token):
+def logout():
+  supabase.auth.sign_out()
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+  if not token or not token.strip():
+    raise InvalidAuthError("Access token required")
+  
   try:
     response = supabase.auth.get_user(token)
     user = response.user
 
-    return {
-      "id": user.id,
-      "email": user.email,
-      "created_at": user.created_at
-    }
+    return user
 
   except:
     raise InvalidAuthError("Invalid or expired token.")
