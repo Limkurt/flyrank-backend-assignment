@@ -10,6 +10,7 @@ A REST API for managing a to-do list, built with FastAPI. The project started as
 * PostgreSQL
 * Docker
 * uv
+* supabase
 
 ## Current Features
 
@@ -20,6 +21,7 @@ A REST API for managing a to-do list, built with FastAPI. The project started as
 * Environment-based database configuration
 * Interactive API documentation with Swagger UI
 * Repository and service layers
+* Authorization
 
 ## Progression
 
@@ -27,6 +29,7 @@ A REST API for managing a to-do list, built with FastAPI. The project started as
 2. **SQLite persistence**
 3. **PostgreSQL with Docker**
 4. **Gradual architectural refactoring**
+5. **Auth with supabase**
 
 ## Getting Started
 
@@ -71,6 +74,12 @@ The API will be available at:
 | POST   | `/tasks`      | Create a task            |
 | PUT    | `/tasks/{id}` | Update a task            |
 | DELETE | `/tasks/{id}` | Delete a task            |
+| POST   | `/auth/signup`| Create a user            |
+| POST   | `/auth/login` | Login in a user          |
+| POST   | `/auth/logout`| Logout the user          |
+| GET    | `/public/info`| Create a task            |
+| GET    | `/protected/profile` | Display user id, email, created at|
+| GET    | `/protected/dashboard` | Display all user info|
 
 ## Example
 
@@ -106,8 +115,3 @@ It hardcoded the secret and didn't use psycopg, opting for sqlalchemy instead. I
 
 ### 3. What did my prompt forget to specify?
 I forgot to mention which package manager to use, which module to use to interact with the database, and the database name itself. I also forgot to specify how to properly output the result, such as whether it should be in a downloadable file format or just a simple, copyable code block.
-
-
-## Limitations
-
-* No authentication or authorization yet.
