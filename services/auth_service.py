@@ -2,7 +2,7 @@ from database import supabase
 from fastapi import Depends
 from typing import Annotated
 
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 
 # --------------------------------------------------------------------------
 # Exceptions
@@ -13,6 +13,8 @@ class InvalidAuthError(Exception):
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+security = HTTPBearer()
 
 def signup(email: str, password: str) -> dict:
   clean_email = email.strip().lower()
@@ -43,9 +45,11 @@ def login(email: str, password: str):
 def logout():
   supabase.auth.sign_out()
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-  if not token or not token.strip():
+async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)]):
+  if credentials is None:
     raise InvalidAuthError("Access token required")
+
+  token = credentials.credentials
   
   try:
     response = supabase.auth.get_user(token)

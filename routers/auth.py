@@ -33,7 +33,7 @@ def login(data: AuthRequest):
     raise invalid_login(str(e))
 
 @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout():
+def logout(current_user: Annotated[User, Depends(auth_service.get_current_user)]):
   return auth_service.logout()
 
 @router.get("/public/info")
