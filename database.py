@@ -1,11 +1,14 @@
 import psycopg
 from dotenv import load_dotenv
+from supabase import Client, create_client
 import os
 
 # Load variable from .env into os.environ
 load_dotenv()
 
 DB_PATH = os.getenv("DATABASE_URL")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 #Dummy data
 DATA = [
@@ -13,6 +16,14 @@ DATA = [
   { "id": 2, "title": "Watch", "done": False},
   { "id": 3, "title": "Listen", "done": False}
 ]
+
+if not SUPABASE_KEY or not SUPABASE_URL:
+  raise ValueError("Missing Supabase environment variables")
+
+supabase: Client = create_client(
+  SUPABASE_URL,
+  SUPABASE_KEY
+)
 
 def get_db():
   return psycopg.connect(DB_PATH)

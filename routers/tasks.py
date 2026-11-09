@@ -1,24 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
+
 from services import task_service
 from services.task_service import InvalidTaskError
+from exceptions import bad_request, not_found
+
 
 router = APIRouter()
-
-# --------------------------------------------------------------------------
-# Exceptions
-# --------------------------------------------------------------------------
-
-def _not_found(task_id: int) -> HTTPException:
-  return HTTPException(
-      status_code=status.HTTP_404_NOT_FOUND,
-      detail={"error": f"No Task {task_id} found"}
-  )
-
-def _bad_request(msg: str) -> HTTPException:
-  return HTTPException(
-    status_code=status.HTTP_400_BAD_REQUEST,
-    detail={"error": msg}
-  )
 
 # --------------------------------------------------------------------------
 # 1. Home
@@ -55,7 +42,7 @@ async def getTask(id: int):
   if task:
     return task
 
-  raise _not_found(id)
+  raise not_found(id)
 
 # --------------------------------------------------------------------------
 # 5. Get all finished task
@@ -68,7 +55,7 @@ async def getDoneTask(done: bool):
   if tasks:
     return tasks
 
-  raise _not_found(done)
+  raise not_found(done)
 
 # --------------------------------------------------------------------------
 # 6. Tasks Statistics
@@ -90,7 +77,7 @@ async def createTask(title: str):
   try:
     return task_service.create_task(title)
   except InvalidTaskError as e:
-    raise _bad_request(str(e))
+    raise bad_request(str(e))
 
 # --------------------------------------------------------------------------
 # 8. Update task
@@ -100,20 +87,20 @@ async def createTask(title: str):
 async def updateTask(id: int, title: str | None = None, done: bool | None = None):
   try:
     if not task_service.find_task(id):
-      raise _not_found(id)
+      raise not_found(id)
     
     return task_service.update_task(id, title, done)
     
   except InvalidTaskError as e:
-    raise _bad_request(str(e))
+    raise bad_request(str(e))
 
 # --------------------------------------------------------------------------
 # 9. Delete task
 # --------------------------------------------------------------------------
 
-@router.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT, description="Delete a specified task")
+@router.delete("/tasks/{id}", status_code=204, description="Delete a specified task")
 async def deleteTask(id: int):
   if not task_service.find_task(id):
-    raise _not_found(id)
+    raise not_found(id)
 
   task_service.delete_task(id)
