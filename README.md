@@ -77,7 +77,7 @@ The API will be available at:
 | POST   | `/auth/signup`| Create a user            |
 | POST   | `/auth/login` | Login in a user          |
 | POST   | `/auth/logout`| Logout the user          |
-| GET    | `/public/info`| Create a task            |
+| GET    | `/public/info`| Display public info      |
 | GET    | `/protected/profile` | Display user id, email, created at|
 | GET    | `/protected/dashboard` | Display all user info|
 
@@ -104,14 +104,3 @@ curl -X POST http://0.0.0.0:8000/tasks \
 ## Database
 
 ![The Postgres Database(via psql)](images/psql_database.png)
-
-## AI vs Me
-
-### 1. What did the AI do better?
-It used schemas and OOP principles, which ensured consistency between request and response payloads. It also generated better Swagger documentation by organizing endpoints and providing example request bodies, making it more user-friendly and clearer on how the program functions and how to use it. Moreover, it had a better project structure; even though I gave it my desired layout, it improved on it by consolidating everything into a single app directory. Overall, the AI-generated implementation was cleaner, although it did not abstract HTTPException into a reusable helper function to cut down on repetitive typing. However, the AI version did make better use of classes for catching and raising errors.
-
-### 2. What did it get wrong or quietly ignore?
-It hardcoded the secret and didn't use psycopg, opting for sqlalchemy instead. It also hardcoded the GET /health API without checking if the database is actually running with SELECT 1 FROM taskdb.
-
-### 3. What did my prompt forget to specify?
-I forgot to mention which package manager to use, which module to use to interact with the database, and the database name itself. I also forgot to specify how to properly output the result, such as whether it should be in a downloadable file format or just a simple, copyable code block.
